@@ -4,4 +4,4 @@ Projeto de reprodução e análise dos dados do OECD.AI AI Incidents and Hazards
 
 Fonte: https://oecd.ai/en/incidents
 
-Este repositório preserva os dados originais separadamente das variáveis derivadas e documenta a extração, o tratamento e a classificação segundo as categorias A–D da metodologia da OCDE.
+O painel web está em português e preserva a distinção entre dados originais e variáveis derivadas.
