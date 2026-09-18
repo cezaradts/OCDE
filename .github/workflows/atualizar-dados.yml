@@ -1,0 +1,23 @@
+name: Atualizar dados OECD AIM
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+permissions:
+  contents: write
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extrair AIM
+        run: python scripts/baixar_oecd_aim.py
+      - name: Classificar A-D
+        run: python scripts/classificar_categorias.py
+      - name: Registrar atualização
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || git commit -m "Atualiza base OECD AIM"
+          git push
