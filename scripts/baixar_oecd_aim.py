@@ -1,16 +1,29 @@
 import json,re,sys,time
 from concurrent.futures import ThreadPoolExecutor,as_completed
 from pathlib import Path
+from urllib.error import HTTPError,URLError
 from urllib.request import Request,urlopen
 
 ROOT=Path(__file__).resolve().parents[1]
 RAW=ROOT/"data"/"oecd_aim_raw.json"
 SITEMAP="https://oecd.ai/sitemaps/incident-monitor-sitemap.xml"
-UA="OCDE-AIM-estudo-academico/1.0"
+UA="OCDE-AIM-estudo-academico/1.1"
+REQUEST_TIMEOUT=20
+MAX_RETRIES=3
+WORKERS=20
 
-def get(url,timeout=45):
-    req=Request(url,headers={"User-Agent":UA})
-    with urlopen(req,timeout=timeout) as r:return r.read().decode("utf-8","replace")
+def get(url,timeout=REQUEST_TIMEOUT):
+    last=None
+    for attempt in range(1,MAX_RETRIES+1):
+        try:
+            req=Request(url,headers={"User-Agent":UA,"Accept":"text/html,application/xml"})
+            with urlopen(req,timeout=timeout) as r:
+                return r.read().decode("utf-8","replace")
+        except (HTTPError,URLError,TimeoutError,OSError) as e:
+            last=e
+            if attempt<MAX_RETRIES:
+                time.sleep(min(2**(attempt-1),4))
+    raise last
 
 def body_from_page(text):
     m=re.search(r'<script[^>]*id="ng-state"[^>]*>(.+?)</script>',text,re.S)
@@ -32,8 +45,7 @@ def pick(d,names):
 def text_value(v):
     if isinstance(v,str):return v
     if isinstance(v,list):return " ".join(text_value(x) for x in v)
-    if isinstance(v,dict):
-        return " ".join(text_value(x) for x in v.values())
+    if isinstance(v,dict):return " ".join(text_value(x) for x in v.values())
     return str(v) if v else ""
 
 def one(url):
@@ -44,25 +56,39 @@ def one(url):
         harm=pick(b,["harm_type","harm_types"])
         typ=pick(b,["severity","type","incident_type","classification"])
         date=pick(b,["date","event_date"])
-        return {"id":str(b.get("id")),"data":str(date),"pais":text_value(country).strip(),"titulo":str(b.get("title","")).strip(),"tipo":text_value(typ).strip(),"tipos_dano":text_value(harm).strip(),"url":url}
+        return {"id":str(b.get("id")),"data":str(date),
+                "pais":text_value(country).strip(),
+                "titulo":str(b.get("title","")).strip(),
+                "tipo":text_value(typ).strip(),
+                "tipos_dano":text_value(harm).strip(),"url":url}
     except Exception as e:
-        print(f"ERRO {url}: {e}",file=sys.stderr);return None
+        print(f"ERRO {url}: {e}",file=sys.stderr)
+        return None
 
 def main():
-    xml=get(SITEMAP)
+    print("Baixando sitemap oficial do OECD AIM...",flush=True)
+    xml=get(SITEMAP,timeout=30)
     urls=re.findall(r"<loc>([^<]+)</loc>",xml)
-    urls=[u for u in urls if re.match(r"https://oecd\.ai/en/incidents/[^/]+$",u)]
-    print(f"URLs encontradas: {len(urls)}")
+    urls=[u.strip() for u in urls if re.match(r"https://oecd\\.ai/en/incidents/[^/]+$",u.strip())]
+    urls=list(dict.fromkeys(urls))
+    if not urls: raise RuntimeError("Nenhuma URL de incidente foi encontrada no sitemap.")
+    print(f"URLs encontradas: {len(urls)}",flush=True)
+
     out=[]
-    with ThreadPoolExecutor(max_workers=10) as ex:
-        fs=[ex.submit(one,u) for u in urls]
-        for i,f in enumerate(as_completed(fs),1):
+    failed=0
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+        futures={ex.submit(one,u):u for u in urls}
+        for i,f in enumerate(as_completed(futures),1):
             x=f.result()
-            if x:out.append(x)
-            if i%250==0:print(f"Processadas: {i}/{len(urls)}")
+            if x: out.append(x)
+            else: failed+=1
+            if i%100==0 or i==len(urls):
+                print(f"Processadas: {i}/{len(urls)} | válidas: {len(out)} | falhas: {failed}",flush=True)
+
     out.sort(key=lambda x:(x["data"],x["id"]),reverse=True)
     RAW.parent.mkdir(parents=True,exist_ok=True)
     RAW.write_text(json.dumps(out,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    print(f"Registros extraídos: {len(out)}")
+    print(f"Registros extraídos: {len(out)}; falhas após tentativas: {failed}",flush=True)
 
-if __name__=="__main__":main()
+if __name__=="__main__":
+    main()
