@@ -1,1 +1,147 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OCDE — Incidentes e Perigos de IA</title><link rel="stylesheet" href="assets/style.css"></head><body><header class="topo"><div class="marca">OCDE <span>AIM</span></div><div class="subtitulo">Incidentes e perigos de Inteligência Artificial</div></header><main class="container"><section class="hero"><p class="eyebrow">PAINEL DE PESQUISA</p><h1>Incidentes de IA — Brasil × Mundo</h1><p>Explore os registros do OECD.AI AI Incidents and Hazards Monitor e compare os tipos de dano segundo as categorias A, B, C e D.</p></section><section class="filtros"><div class="campo"><label for="escopo">Escopo geográfico</label><select id="escopo"><option value="Mundo">Mundo</option><option value="Brasil">Brasil</option></select></div><div class="campo"><label for="categoria">Categoria de dano</label><select id="categoria"><option value="Todas">Todas as categorias</option><option value="A">A — Saúde de pessoas ou grupos</option><option value="B">B — Infraestrutura crítica</option><option value="C">C — Direitos e obrigações legais</option><option value="D">D — Propriedade, comunidades ou ambiente</option></select></div><div class="campo"><label for="pais">País</label><select id="pais"><option value="Todos">Todos os países</option></select></div><button id="limpar" class="botao-secundario">Limpar filtros</button></section><section class="cards" id="cards"></section><section class="painel"><h2>Distribuição por categoria</h2><p id="descricao"></p><div id="barras" class="barras"></div></section><section class="painel"><h2>Registros</h2><p>Um registro pode pertencer a mais de uma categoria.</p><div class="tabela-wrap"><table><thead><tr><th>Data</th><th>País</th><th>Título</th><th>Tipo</th><th>A</th><th>B</th><th>C</th><th>D</th></tr></thead><tbody id="tabela"></tbody></table></div></section><section class="nota"><strong>Nota metodológica</strong><p>O AIM é um monitor automatizado baseado em notícias públicas. A OCDE informa que a base representa apenas um subconjunto dos incidentes e perigos de IA no mundo. As categorias A–D deste painel são usadas para a análise comparativa.</p><p>Fonte: <a href="https://oecd.ai/en/incidents" target="_blank">OECD.AI — AIM</a> · <a href="https://oecd.ai/en/incidents-methodology" target="_blank">Metodologia</a></p></section></main><footer>Projeto acadêmico OCDE · interface em português</footer><script src="assets/app.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OCDE — Incidentes e Perigos de IA</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <style>
+        .cartao-grafico {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            max-width: 100%;
+            margin: 20px 0;
+            position: relative;
+            height: 400px;
+        }
+
+        .titulo-grafico {
+            font-family: Arial, sans-serif;
+            margin-bottom: 20px;
+        }
+
+        .titulo-grafico h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .titulo-grafico p {
+            margin: 0;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topo">
+        <div class="marca">OCDE <span>AIM</span></div>
+        <div class="subtitulo">Incidentes e perigos de Inteligência Artificial</div>
+    </header>
+    <main class="container">
+        <section class="hero">
+            <p class="eyebrow">PAINEL DE PESQUISA</p>
+            <h1>Incidentes de IA — Brasil × Mundo</h1>
+            <p>Explore os registros do OECD.AI AI Incidents and Hazards Monitor e compare os tipos de dano segundo as
+                categorias A, B, C e D.</p>
+        </section>
+        <section class="filtros">
+            <div class="campo">
+                <label for="escopo">Escopo geográfico</label>
+                <select id="escopo">
+                    <option value="Mundo">Mundo</option>
+                    <option value="Brasil">Brasil</option>
+                </select>
+            </div>
+            <div class="campo">
+                <label for="categoria">Categoria de dano</label>
+                <select id="categoria">
+                    <option value="Todas">Todas as categorias</option>
+                    <option value="A">A — Saúde de pessoas ou grupos</option>
+                    <option value="B">B — Infraestrutura crítica</option>
+                    <option value="C">C — Direitos e obrigações legais</option>
+                    <option value="D">D — Propriedade, comunidades ou ambiente</option>
+                </select>
+            </div>
+            <div class="campo">
+                <label for="pais">País</label>
+                <select id="pais">
+                    <option value="Todos">Todos os países</option>
+                </select>
+                <div class="campo">
+                    <label for="ano">Ano</label>
+                    <select id="ano">
+                        <option value="Todos">Todos os anos</option>
+                    </select>
+            </div>
+            <button id="limpar" class="botao-secundario">Limpar filtros</button>
+        </section>
+
+        <section class="cards" id="cards"></section>
+
+        <section class="painel">
+            <h2>Análise por ano</h2>
+            <p>Evolução da quantidade de incidentes registrados ao longo do tempo.</p>
+            <div class="cartao-grafico">
+                <div class="titulo-grafico">
+                    <h3>Incidentes</h3>
+                    <p>por ano</p>
+                </div>
+                <canvas id="graficoIncidentesAno"></canvas>
+            </div>
+        </section>
+
+        <section class="painel">
+            <h2>Análise por tipo</h2>
+            <p>Distribuição dos incidentes agrupados pelo tipo de ocorrência ou dano.</p>
+            <div class="cartao-grafico">
+                <canvas id="graficoIncidentesTipo"></canvas>
+            </div>
+        </section>
+
+        <section class="painel">
+            <h2>Distribuição por categoria</h2>
+            <p id="descricao"></p>
+            <div id="barras" class="barras"></div>
+        </section>
+        <section class="painel">
+            <h2>Registros</h2>
+            <p>Um registro pode pertencer a mais de uma categoria.</p>
+            <div class="tabela-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>País</th>
+                            <th>Título</th>
+                            <th>Tipo</th>
+                            <th>A</th>
+                            <th>B</th>
+                            <th>C</th>
+                            <th>D</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela"></tbody>
+                </table>
+            </div>
+        </section>
+        <section class="nota">
+            <strong>Nota metodológica</strong>
+            <p>O AIM é um monitor automatizado baseado em notícias públicas. A OCDE informa que a base representa apenas
+                um subconjunto dos incidentes e perigos de IA no mundo. As categorias A–D deste painel são usadas para a
+                análise comparativa.</p>
+            <p>Fonte: <a href="https://oecd.ai/en/incidents" target="_blank">OECD.AI — AIM</a> · <a
+                    href="https://oecd.ai/en/incidents-methodology" target="_blank">Metodologia</a></p>
+        </section>
+    </main>
+    <footer>Projeto acadêmico OCDE · interface em português</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="assets/app.js"></script>
+</body>
+
+</html>
